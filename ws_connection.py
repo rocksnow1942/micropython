@@ -30,6 +30,7 @@ class WebSocketConnection:
         try:
             msg_bytes = self.ws.read()
         except OSError:
+            print('read oserror')
             self.client_close = True
 
         if not msg_bytes and self.client_close:
@@ -41,6 +42,7 @@ class WebSocketConnection:
         try:
             self.ws.write(msg)
         except OSError:
+            print('write error')
             self.client_close = True
 
     def _check_socket_state(self):
@@ -50,6 +52,7 @@ class WebSocketConnection:
         state = int(state_str.split("=")[1])
 
         if state == 3:
+            print('check state = 3')
             self.client_close = True
 
     def is_closed(self):

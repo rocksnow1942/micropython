@@ -12,11 +12,9 @@ class TestClient(WebSocketClient):
             if not msg:
                 return
             msg = msg.decode("utf-8")
-            items = msg.split(" ")
-            cmd = items[0]
-            if cmd == "Hello":
-                self.connection.write(cmd + " World")
-                print("Hello World")
+            
+            self.connection.write(msg + " back to you.")
+               
         except ClientClosedError:
             self.connection.close()
 

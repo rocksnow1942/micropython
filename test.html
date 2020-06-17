@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WebSocket Client</title>
+</head>
+<body>
+    
+    <div>
+        <div><button id = "connect">Connect</button></div>
+        <textarea id="command" cols="60" rows="10" placeholder="Enter command here"></textarea>
+        
+        <div><button id="execute">Execute</button></div>
+    </div>
+
+<strong>Received:</strong> <br/>
+<div id="response">
+    
+</div>
+
+<script>
+    let wscon;
+    let response =  document.getElementById("response");
+    document.getElementById('connect').addEventListener('click',e=>{
+        try {
+            wscon = new WebSocket("ws://" + location.hostname + ":80");
+            wscon.onopen = (e) => {
+                response.innerHTML = "<h1>Connection established</h1>";}
+            wscon.onmessage = e => { response.innerHTML = `${response.innerHTML}<p style="word-break:break-all">&gt;&gt;&gt;${e.data}</p>` }
+            wscon.onclose = e=>{ response.innerHTML = `${response.innerHTML}<h1>Connection closed</h1>`  }
+        } catch (err) {
+            response.innerHTML = "<h1>Connection failed!</h1>"
+        }
+    })
+
+    document.getElementById('execute').addEventListener('click',(e)=>{
+        let command = document.getElementById('command').value
+        if (command) {
+            wscon.send(command)}
+    })
+
+</script>
+</body>
+</html>

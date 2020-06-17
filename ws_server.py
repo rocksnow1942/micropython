@@ -32,14 +32,11 @@ class WebSocketServer:
         self._listen_s.listen(1)
         if accept_handler:
             self._listen_s.setsockopt(socket.SOL_SOCKET, 20, accept_handler)
-        for i in (network.AP_IF, network.STA_IF):
-            iface = network.WLAN(i)
-            if iface.active():
-                print("WebSocket started on ws://%s:%d" % (iface.ifconfig()[0], port))
+        
 
     def _accept_conn(self, listen_sock):
         cl, remote_addr = listen_sock.accept()
-        print("Client connection from:", remote_addr)
+        # print("Client connection from:", remote_addr)
 
         if len(self._clients) >= self._max_connections:
             # Maximum connections limit reached
@@ -83,13 +80,13 @@ class WebSocketServer:
         self._listen_s = None
         for client in self._clients:
             client.connection.close()
-        print("Stopped WebSocket server.")
+        # print("Stopped WebSocket server.")
 
     def start(self, port=80):
         if self._listen_s:
             self.stop()
         self._setup_conn(port, self._accept_conn)
-        print("Started WebSocket server.")
+        # print("Started WebSocket server.")
 
     def process_all(self):
         for client in self._clients:

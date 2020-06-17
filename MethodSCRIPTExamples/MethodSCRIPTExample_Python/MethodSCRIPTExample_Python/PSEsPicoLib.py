@@ -28,11 +28,11 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * ----------------------------------------------------------------------------
  */
- 
+
  Revision History
- 1.0: 
+ 1.0:
  - Initial release
- 
+
  1.1:
  - Added way of enabling verbose printing of data
  - Added parsing of multiple curves in one measurement
@@ -53,10 +53,10 @@ import numpy as np
 
 PSEsPicoLibVersion = "1.1"
 
-print_verbose = False
+print_verbose = True
 
 #dictionary list for conversion of the SI prefixes
-sip_factor = [{"si":"a", "factor": 1e-18},      #atto 
+sip_factor = [{"si":"a", "factor": 1e-18},      #atto
               {"si":"f", "factor": 1e-15},      #femto
               {"si":"p", "factor": 1e-12},      #pico
               {"si":"n", "factor": 1e-9 },      #nano
@@ -78,26 +78,26 @@ ms_var_types = [  {"vt":"aa", "type": "unknown"             , "unit" : " " },
                   #{"vt":"ad", "type": "WE potential"        , "unit" : "V" },
                   {"vt":"ae", "type": "RE potential"        , "unit" : "V" },
                   {"vt":"ag", "type": "WE vs CE potential"  , "unit" : "V" },
-                  
+
                   {"vt":"as", "type": "AIN0 potential"      , "unit" : "V" },
                   {"vt":"at", "type": "AIN1 potential"      , "unit" : "V" },
                   {"vt":"au", "type": "AIN2 potential"      , "unit" : "V" },
-                  
+
                   {"vt":"ba", "type": "WE current"          , "unit" : "A"},
-                  
+
                   {"vt":"ca", "type": "Phase"               , "unit" : "Degrees"},
                   {"vt":"cb", "type": "Impedance"           , "unit" : "Ohm"},
                   {"vt":"cc", "type": "ZReal"               , "unit" : "Ohm"},
                   {"vt":"cd", "type": "ZImag"               , "unit" : "Ohm"},
-                  
+
                   {"vt":"da", "type": "Applied potential"   , "unit" : "V"},
                   {"vt":"db", "type": "Applied current"     , "unit" : "A"},
                   {"vt":"dc", "type": "Applied frequency"   , "unit" : "Hz"},
                   {"vt":"dd", "type": "Applied AC amplitude", "unit" : "Vrms"},
-                  
+
                   {"vt":"eb", "type": "Time"                , "unit" : "s"},
                   {"vt":"ec", "type": "Pin mask"            , "unit" : " "},
-                  
+
                   {"vt":"ja", "type": "Misc. generic 1"     , "unit" : " " },
                   {"vt":"jb", "type": "Misc. generic 2"     , "unit" : " " },
                   {"vt":"jc", "type": "Misc. generic 3"     , "unit" : " " },
@@ -112,7 +112,7 @@ def SetPrintVerbose(boolean):
     global print_verbose
     print_verbose = boolean
 
-#Convert a measurement matrix obtained through GetValueMatrixWithVT, 
+#Convert a measurement matrix obtained through GetValueMatrixWithVT,
 #GetValueMatrix, ParseResultFileWithVT or ParseResultFile to a CSV string
 def MatrixToCSV(matrix, vts = []):
     try:
@@ -133,7 +133,7 @@ def MatrixToCSV(matrix, vts = []):
                 csv += '\n'
     except Exception as e1:
         print("error saving csv...: " + str(e1)) #print the exception
-    
+
     return csv
 
 #Get var type of the specified column and curve
@@ -158,7 +158,7 @@ def GetVarTypeUnit(vt):
     for i in range(len(ms_var_types)):
         if ms_var_types[i]["vt"] == vt:
             return ms_var_types[i]["unit"]
-    return "?"  
+    return "?"
 
 #Convert the integer value to floatng point using the SI Prefix factor
 def ValConverter(value,sip):
@@ -227,7 +227,7 @@ def GetValueMatrixWithVT(content):
                     vt_array.append([])
                     #Save first list of col VT's for each curve
                     vt_array[j] = vts
-                
+
                 #Add values to value array
                 val_array[j].append(vals)
                 if(print_verbose == True):
@@ -249,17 +249,17 @@ def ParseResultFileWithVT(resultfile):
     values, vts = GetValueMatrixWithVT(content)
     return values, vts
 
-#Get the amount of curves in a matrix obtained by GetValueMatrixWithVT, 
+#Get the amount of curves in a matrix obtained by GetValueMatrixWithVT,
 #GetValueMatrix, ParseResultFileWithVT or ParseResultFile
 def GetCurveCount(matrix):
     return len(matrix)
 
-#Get the specified curve from a matrix obtained by GetValueMatrixWithVT, 
+#Get the specified curve from a matrix obtained by GetValueMatrixWithVT,
 #GetValueMatrix, ParseResultFileWithVT or ParseResultFile
 def GetCurve(matrix, icurve):
     return matrix[icurve]
 
-#Gets all column data for the specified column and curve from a value matrix obtained by 
+#Gets all column data for the specified column and curve from a value matrix obtained by
 #GetValueMatrixWithVT, GetValueMatrix, ParseResultFileWithVT or ParseResultFile
 #If no curve is specified all column data from all curves is combined
 def GetColumnFromMatrix(matrix, column, icurve = -1):
@@ -271,7 +271,7 @@ def GetColumnFromMatrix(matrix, column, icurve = -1):
         value_list = [row[column] for row in matrix[icurve]]
     return np.asarray(value_list)
 
-#Gets all row data for the specified row and curve from a value matrix obtained by 
+#Gets all row data for the specified row and curve from a value matrix obtained by
 #GetValueMatrixWithVT, GetValueMatrix, ParseResultFileWithVT or ParseResultFile
 #If no curve is specified the row is returned from the first curve
 def GetRowFromMatrix(matrix, row, icurve = 0):
@@ -287,11 +287,11 @@ def FindComport(exclude_port):
             print(port.device)
         if (port.device != exclude_port):               #Exclude port from the available ports
             myport = port.device                        #Set the port to the highest availabe port
-    return myport   
+    return myport
 
 #Opens a serial COM port
 def OpenComport(ser,comport,timeout):
-    ser.port = comport                                  #set the port 
+    ser.port = comport                                  #set the port
     ser.baudrate = 230400                               #Baudrate is 230400 for EmstatPico
     ser.bytesize = serial.EIGHTBITS                     #number of bits per bytes
     ser.parity = serial.PARITY_NONE                     #set parity check: no parity
@@ -302,7 +302,7 @@ def OpenComport(ser,comport,timeout):
     ser.rtscts = False                                  #disable hardware (RTS/CTS) flow control
     ser.dsrdtr = False                                  #disable hardware (DSR/DTR) flow control
     ser.writeTimeout = 2                                #timeout for write is 2 seconds
-    try: 
+    try:
         ser.open()                                      #open the port
     except serial.SerialException as e:                 #catch exception
         print("error open serial port: " + str(e))      #print the exception
@@ -313,16 +313,16 @@ def OpenComport(ser,comport,timeout):
 def IsConnected(ser):
     prev_timeout = ser.timeout                          #Get the current timeout to restore it later
     ser.timeout = 4                                     #Set the timeout to 2 seconds
-    ser.write(bytes("t\n",  'ascii'))                   #write the command 
+    ser.write(bytes("t\n",  'ascii'))                   #write the command
     response =  ser.read_until(bytes("*\n", 'ascii'))   #read until *\n
-    response = str(response, 'ascii')                   #convert bytes to ascii string        
+    response = str(response, 'ascii')                   #convert bytes to ascii string
     start=response.find('esp')                          #check the presents of "esp" in the repsonse
     ser.timeout = prev_timeout                          #restore timeout
     if start == -1:                                     #return if string is found
         return False
     return True
 
-#Flush the Pico parse buffer 
+#Flush the Pico parse buffer
 def Flush(ser):
     prev_timeout = ser.timeout                          #Get the current timeout to restore it later
     ser.timeout = 4                                     #Set the timeout to 2 seconds
@@ -358,7 +358,7 @@ def GetMscriptVersion(ser):
 
 #Get a register
 def GetRegister(ser,reg):
-    sCmd = "G" + "%02d" % (reg)   
+    sCmd = "G" + "%02d" % (reg)
     #print(sCmd)
     ser.write(bytes(sCmd+ "\n" ,  'ascii'))
     response = ser.readline()
@@ -386,12 +386,12 @@ def GetResults(ser):
 
 #Parse variable part of MethodSCRIPT data package
 def ParseVarString(varstr):
-    SIP = varstr[7]                 #get SI Prefix 
+    SIP = varstr[7]                 #get SI Prefix
     varstr = varstr[:7]             #strip SI prefix from value
     val = int(varstr,16)            #convert the hexdecimal number to an integer
     val = val - 2**27               #substract the offset binary part to make it a signed value
     return ValConverter(val,SIP)    #return the converted floating point value
-        
+
 
 #Parses the results from one result-line and returns a list of values
 def ParseResultsFromLine(res_line):
@@ -400,11 +400,11 @@ def ParseResultsFromLine(res_line):
     if res_line.startswith('P'):            #data point start with P
         pck = res_line[1:len(res_line)]     #ignore last and first character
         for v in pck.split(';'):            #value fields are seperated by a semicolon
-            str_vt = v[0:2]                 #get the value-type 
+            str_vt = v[0:2]                 #get the value-type
             str_var = v[2:2+8]              #strip out value type
             val = ParseVarString(str_var)   #Parse the value
             lval.append(val)                #append value to the list
-            lvt.append(str_vt)              
+            lvt.append(str_vt)
     return lval,lvt                         #return the list of values and list of value types
 
 
@@ -419,7 +419,7 @@ def SendScriptLine(ser,scriptline):
     if(print_verbose == True):
         print(scriptline.strip())
     ser.write(bytes(scriptline,  'ascii'))
-    
+
 #Send MethodSCRIPT to the EmStat Pico
 def SendScriptFile(ser,scriptfile):
     with open(scriptfile) as f:
@@ -428,11 +428,11 @@ def SendScriptFile(ser,scriptfile):
         print(len(content))
     for scriptline in content:
         SendScriptLine(ser,scriptline)
-        
+
 #Check that specified filename does not exist already, adds current date if file does exist
 def CheckFileExistAndRename(filepathname):
     ResultFile = filepathname
-    file_Exist=os.path.isfile(filepathname) 
+    file_Exist=os.path.isfile(filepathname)
     now = datetime.datetime.now()
     if file_Exist :
         (prefix, sep, suffix) = ResultFile.rpartition('.')

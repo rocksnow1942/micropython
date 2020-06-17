@@ -14,10 +14,8 @@ set_pot_range -300m 400m
 set_cr 59n
 set_autoranging 59n 590u
 cell_on
-#wait 2 seconds at -300mV for equilibration
 set_e -300m
 wait 2
-#measure swv: E, I, I fwd, I rev, EBegin, EEnd, EStep, EAmp, Freq
 meas_loop_swv p c f r -300m 300m 5m 50m 10
 	pck_start
 	pck_add p
@@ -26,7 +24,6 @@ meas_loop_swv p c f r -300m 300m 5m 50m 10
 	pck_add r
 	pck_end
 endloop
-#reverse SWV
 meas_loop_swv p c f r 300m -300m 5m 50m 10
 	pck_start
 	pck_add p
