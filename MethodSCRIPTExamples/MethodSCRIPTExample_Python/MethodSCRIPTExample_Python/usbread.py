@@ -47,6 +47,9 @@ slave.close()
 slave = serial.Serial('/dev/cu.SLAB_USBtoUART', 115200, timeout=3)
 
 
+
+
+
 len(bytearray('wow i am your loss?\n'.encode()))
 
 b = 'abc'.encode()
@@ -100,6 +103,13 @@ def OpenComport(ser,comport,timeout):
 
 ser = serial.Serial()
 
+
+# port on mbp 
+port = "/dev/tty.usbserial-FT4JDMYV"
+
+OpenComport(ser,port,1)
+
+
 OpenComport(ser,'/dev/cu.usbserial-FT4JDMYV',1)
 
 ser.write('e\nsend_string "hello world"\n\n'.encode())
@@ -151,7 +161,11 @@ cell_off
 
 
 """
-print(repr(script))
+
+
+ser.write(script.encode())
+ser.read_all().decode()
+
 
 scriptfile = '/Users/hui/Documents/Scripts/micropython/MethodSCRIPTExamples/MethodSCRIPTExample_Python/MethodSCRIPTExample_Python/MethodSCRIPT files/MSExampleCV.mscr'
 swvscript = '/Users/hui/Documents/Scripts/micropython/MethodSCRIPTExamples/MethodSCRIPTExample_Python/MethodSCRIPTExample_Python/MethodSCRIPT files/MSExampleAdvancedSWV.mscr'
