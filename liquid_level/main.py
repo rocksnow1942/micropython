@@ -1,104 +1,171 @@
-from machine import Pin,PWM,I2C
+from machine import Pin,PWM,I2C,ADC
 import utime
 import ssd1306
-from pid import PID
-
-trig=Pin(15, Pin.OUT)
-echo=Pin(13, Pin.IN)
-pwm = PWM(Pin(12))
-pwm.freq(50) # pwm duty 19 - 134
-button = Pin(0, Pin.IN, Pin.PULL_UP)
-
-
 
 class Controller:
-    def __init__(self,btnGap=200):
+    def __init__(self,btnGap=200,):
         self.btnGap = btnGap
+
         i2c = I2C(scl=Pin(5),sda=Pin(4))
+        
         self.d = ssd1306.SSD1306_I2C(128, 64, i2c)
-        self.waterLevel = 0 
-        self.setLevel = 100 
-        self.pump = 0
-        self.pid = PID(Kp=10,Ki=1,Kd=1,
-                       setpoint=self.setLevel,
-                       output_limits=(19,134))
-        self.clicked = False
+        
+        self.pwm = PWM(Pin(13))
+        self.pwm.duty(0)
+        self.pwm.freq(90) # pwm duty 19 - 134
+        self.button = Pin(12, Pin.IN,Pin.PULL_UP)
+
+        self.led = Pin(2,Pin.OUT)
+        self.led.on() # this turn on board led off
+
+        self.adc = ADC(0)
+        self.pwr = Pin(14, Pin.OUT,)
+        self.pwr.off()
+
         self.t1 = 0 
         self.t2 = 0
+        self.title = 'Liquid Monitor'
+
+        self.pump = False
+        self.speed = 0
+        self.cond = 0
+        self.pumpON = False
+        self.initSpeed = 300
+        self.btnExit = False
+        self.lastCond = 0
+
+    def ledON(self):
+        self.led.off()
+    def ledOFF(self):
+        self.led.on()
 
     def setPump(self,value):
-        pwm.duty(int(value))
+        self.pwm.duty(int(value))
+   
+    def measure(self,wait=0,N=3):
+        "measure method"
+        res = []
+        for i in range(N):
+            res.append( self.singleM(wait) ) 
+            utime.sleep_ms(50)
+        self.cond = sum(res)//N
+         
 
-    def update(self, ):
-        self.getDistance()
-        if self.clicked:
-            self.setLevel = self.waterLevel
+    def singleM(self,wait=0):
+        self.pwr.on()
+        utime.sleep_ms(wait)
+        cond = self.adc.read()
+        self.pwr.off()
+        return cond
 
-        self.pid.setpoint = self.setLevel
+    def update(self):
+        "determine if need to turn on pump"
+        if self.pump:
+            if self.cond >= 20:
+                self.lastCond = self.cond
+                self.speed -= 30
+                if self.speed <= 200:
+                    self.speed = 0
+                self.setPump(self.speed)
+            else:    
+                self.speed+=10
+                if self.speed<=200:
+                    self.speed = 200
+                self.speed = min(1024,self.speed)
+                self.setPump(self.speed)
+        else:
+            self.setPump(0)
+            self.speed = 0
+            
+    
+    # def update(self):
+    #     "determine if need to turn on pump"
+    #     if self.pump:
+    #         if self.cond >= 20:
+    #             self.setPump(0)
+    #             if self.pumpON == True:
+    #                 dt = utime.ticks_diff(utime.time(),self.pumpStart)
+    #                 if dt > 5:
+    #                     self.initSpeed = (self.initSpeed + self.speed) // 2
+    #                 else:
+    #                     self.initSpeed = max(300, int(self.speed * 0.8))
+    #                 self.speed = 0
+    #             self.pumpON = False
+    #         else:
+    #             if self.pumpON == False:
+    #                 self.pumpON = True
+    #                 self.speed = self.initSpeed
+    #                 self.pumpStart = utime.time()
+                    
+    #             self.setPump(self.speed)
+    #             self.speed+=10
 
-        self.pump = 153 - self.pid(self.waterLevel)
-        self.setPump( self.pump )
-        
-        
+    #     else:
+    #         self.setPump(0)
+    #         self.speed = 0
+    #         self.pumpON = False
 
     def show(self):
         self.d.fill(0)
-        self.d.text('Liquid Monitor',0,2)
-        self.d.text('Current:{:>6.1f}cm'.format(self.waterLevel), 0, 20) 
-        self.d.text('Set    :{:>6.1f}cm'.format(self.setLevel), 0, 37)
-        self.d.text('Pump   :{:>6.1f}'.format(self.pump),0, 54)
+        self.d.text(self.title,0,2)
+        self.d.text('Cond.  :{:>6d}'.format(self.cond), 0, 20) 
+        self.d.text('LastC. :{:>6d}'.format(self.lastCond),0, 31)
+        self.d.text('Pump   :{:>6}'.format("ON" if self.pump else "OFF"), 0, 42)
+        self.d.text('Speed  :{:>6d}'.format(self.speed),0, 53)
+        
         self.d.show()
 
-    def text(self,header=None, msg=None):
-        self.display.fill(0)
+    def text(self,header="", msg=""):
+        self.d.fill(0)
         
-        self.display.text(self.header, 0, 2)
-        for i in range(len(self.msg)//16+1):
-            self.display.text(self.msg[i*16:(i+1)*16], 0, i*10 + 16)
-        self.display.show()
-
-    def getDistance(self):
-        trig.off()
-        utime.sleep_us(2)
-        trig.on()
-        utime.sleep_us(10)
-        trig.off()
-        while echo.value() == 0:
-            pass
-        self.t1 = utime.ticks_us()
-        while echo.value() == 1:
-            pass
-        self.t2 = utime.ticks_us()
-        self.waterLevel = (self.t2 - self.t1) / 58.0
+        self.d.text(header, 0, 2)
+        for i in range(len(msg)//16+1):
+            self.d.text(msg[i*16:(i+1)*16], 0, i*10 + 16)
+        self.d.show()
 
     def monitorButton(self):
         self.t1 = utime.ticks_ms()
         while True:
             self.t2 = utime.ticks_ms()
-            if not button.value():
-                self.clicked = True
+            if self.button.value() == 0:
+                self.pump = not self.pump
                 break
             if (self.t2 - self.t1 >= self.btnGap) or ((self.t2 - self.t1)<=0):
-                self.clicked = False
                 break 
-        
-        
- 
-    
-  
-
-
-
+        while (self.button.value() == 0):
+            self.ledON()
+            utime.sleep_ms(50)
+            self.ledOFF()
+            utime.sleep_ms(50)
+            if (utime.ticks_ms() - self.t1)>3000:
+                self.title = "System Exited."
+                self.show()
+                self.btnExit = True
+                raise Exception ('exit')
+            
 
 def mainLoop():
-    control = Controller(btnGap=200)
+    btnExit = False
+    try:
+       
+        control = Controller(btnGap=200,)
 
-    while True:
-        control.monitorButton()
-        control.update()
-        control.show()
-        utime.sleep_ms(200)
-
+        while True:
+            control.ledON()
+            control.monitorButton()
+            control.measure()
+            control.update()
+            control.show()
+            control.ledOFF()
+            utime.sleep_ms(1000)
+    except Exception as e:
+        if not control.btnExit:
+            control.text(header='error',msg=str(e))
+    finally:
+        control.setPump(0)
+        control.ledOFF()
+        if control.btnExit:
+            control.text(header="System Exited.",msg="Button Hold > 3s, system shut down. Power cycle controller to restart.")
 
 mainLoop()
 

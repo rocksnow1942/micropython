@@ -12,7 +12,8 @@ button = Pin(0, Pin.IN, Pin.PULL_UP)
 
 
 class Controller:
-    def __init__(self):
+    def __init__(self,btnGap=200):
+        self.btnGap = btnGap
         i2c = I2C(scl=Pin(5),sda=Pin(4))
         self.d = ssd1306.SSD1306_I2C(128, 64, i2c)
         self.waterLevel = 0 
@@ -21,16 +22,20 @@ class Controller:
         self.pid = PID(Kp=10,Ki=1,Kd=1,
                        setpoint=self.setLevel,
                        output_limits=(19,134))
+        self.clicked = False
+        self.t1 = 0 
+        self.t2 = 0
 
     def setPump(self,value):
         pwm.duty(int(value))
 
-    def update(self,wl=None,sl=None):
-        self.waterLevel = wl or self.waterlevel
-        self.setLevel = sl or self.setLevel
+    def update(self, ):
+        self.getDistance()
+        if self.clicked:
+            self.setLevel = self.waterLevel
 
         self.pid.setpoint = self.setLevel
-        
+
         self.pump = 153 - self.pid(self.waterLevel)
         self.setPump( self.pump )
         
@@ -52,41 +57,45 @@ class Controller:
             self.display.text(self.msg[i*16:(i+1)*16], 0, i*10 + 16)
         self.display.show()
 
+    def getDistance(self):
+        trig.off()
+        utime.sleep_us(2)
+        trig.on()
+        utime.sleep_us(10)
+        trig.off()
+        while echo.value() == 0:
+            pass
+        self.t1 = utime.ticks_us()
+        while echo.value() == 1:
+            pass
+        self.t2 = utime.ticks_us()
+        self.waterLevel = (self.t2 - self.t1) / 58.0
 
-
-
-def getDistance():
-    trig.off()
-    utime.sleep_us(2)
-    trig.on()
-    utime.sleep_us(10)
-    trig.off()
-    while echo.value() == 0:
-        pass
-    t1 = utime.ticks_us()
-    while echo.value() == 1:
-        pass
-    t2 = utime.ticks_us()
-    cm = (t2 - t1) / 58.0
-    return cm
+    def monitorButton(self):
+        self.t1 = utime.ticks_ms()
+        while True:
+            self.t2 = utime.ticks_ms()
+            if not button.value():
+                self.clicked = True
+                break
+            if (self.t2 - self.t1 >= self.btnGap) or ((self.t2 - self.t1)<=0):
+                self.clicked = False
+                break 
+        
+        
+ 
+    
   
 
-def monitorButton(ms):
-    clicked = 0
-    for i in range(int(ms)):
-        utime.sleep_ms(1)
-        if not button.value():
-            clicked = 1
-    return clicked
+
 
 
 def mainLoop():
-    control = Controller()
+    control = Controller(btnGap=200)
+
     while True:
-        buttonclicked = monitorButton(200)
-        distance = getDistance()
-        setLevel = distance if buttonclicked else None
-        control.update(wl=distance,sl= setLevel)
+        control.monitorButton()
+        control.update()
         control.show()
         utime.sleep_ms(200)
 
