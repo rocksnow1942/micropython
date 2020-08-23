@@ -2,6 +2,9 @@ from machine import Pin,PWM,I2C,ADC
 import utime
 import ssd1306
 
+#TODO
+# use Pin 13 as the other side of measure. so that can alternate measure.
+
 class Controller:
     def __init__(self,btnGap=200,):
         self.btnGap = btnGap
