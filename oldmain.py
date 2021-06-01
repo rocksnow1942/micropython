@@ -9,7 +9,7 @@ class Controller:
     def __init__(self,btnGap=200,):
         self.btnGap = btnGap
 
-        i2c = I2C(scl=Pin(4),sda=Pin(5))
+        i2c = I2C(scl=Pin(5),sda=Pin(4))
         
         self.d = ssd1306.SSD1306_I2C(128, 64, i2c)
         self.p = Pressure(i2c)
@@ -19,8 +19,8 @@ class Controller:
         self.pwm.freq(90) # pwm duty 19 - 134
         self.button = Pin(12, Pin.IN,Pin.PULL_UP)
 
-        self.led = Pin(16,Pin.OUT)
-        self.led.off() # this turn on board led off
+        self.led = Pin(2,Pin.OUT)
+        self.led.on() # this turn on board led off
 
         self.adc = ADC(0)
         self.pwr = Pin(14, Pin.OUT,)
@@ -41,9 +41,9 @@ class Controller:
         self.temp=0
 
     def ledON(self):
-        self.led.on()
-    def ledOFF(self):
         self.led.off()
+    def ledOFF(self):
+        self.led.on()
 
     def setPump(self,value):
         self.pwm.duty(int(value))
@@ -108,50 +108,47 @@ class Controller:
 
     def monitorButton(self):
         self.t1 = utime.ticks_ms()
-        clicked = False         
-        while (self.button.value() == 0):     
-            self.ledON()            
-            clicked = True
+        while True:
             self.t2 = utime.ticks_ms()
+            if self.button.value() == 0:
+                self.pump = not self.pump
+                break
+            if (self.t2 - self.t1 >= self.btnGap) or ((self.t2 - self.t1)<=0):
+                break 
+        while (self.button.value() == 0):
+            self.ledON()
             utime.sleep_ms(50)
-            if (self.t2 - self.t1)>3000:
+            self.ledOFF()
+            utime.sleep_ms(50)
+            if (utime.ticks_ms() - self.t1)>3000:
                 self.title = "System Exited."
                 self.show()
                 self.btnExit = True
-                self.ledOFF()
                 raise Exception ('exit')
-        if clicked:
-            self.pump = not self.pump
-            self.ledOFF()
-        return clicked
+            
 
 def mainLoop():
     btnExit = False
-    errorMessage = ""
-    control = Controller(btnGap=200,)
+    try:
+       
+        control = Controller(btnGap=200,)
 
-    while True:
-        try:            
+        while True:
+            control.ledON()
+            control.monitorButton()
             control.measure()
             control.update()
             control.show()
-            for i in range(100):
-                utime.sleep_ms(10)
-                if control.monitorButton():
-                    break
-            if errorMessage:
-                control.text(header='error',msg=errorMessage)
-                utime.sleep(5)
-                errorMessage = ""
-        except Exception as e:
-            if not control.btnExit:
-                errorMessage = str(e)                
-            else:
-                break        
-    control.setPump(0)
-    control.ledOFF()
-    if control.btnExit:
-        control.text(header="System Exited.",msg="Button Hold > 3s, system shut down. Power cycle controller to restart.")
-    
+            control.ledOFF()
+            utime.sleep_ms(1000)
+    except Exception as e:
+        if not control.btnExit:
+            control.text(header='error',msg=str(e))
+    finally:
+        control.setPump(0)
+        control.ledOFF()
+        if control.btnExit:
+            control.text(header="System Exited.",msg="Button Hold > 3s, system shut down. Power cycle controller to restart.")
+
 mainLoop()
 
